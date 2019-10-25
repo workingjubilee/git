@@ -163,6 +163,10 @@ The placeholders are:
 '%ae':: author email
 '%aE':: author email (respecting .mailmap, see linkgit:git-shortlog[1]
 	or linkgit:git-blame[1])
+'%al':: author local-part (the portion of the email address preceding the '@'
+	symbol)
+'%aL':: author local-part (see '%al') respecting .mailmap, see
+	linkgit:git-shortlog[1] or linkgit:git-blame[1])
 '%ad':: author date (format respects --date= option)
 '%aD':: author date, RFC2822 style
 '%ar':: author date, relative
@@ -174,6 +178,10 @@ The placeholders are:
 	linkgit:git-shortlog[1] or linkgit:git-blame[1])
 '%ce':: committer email
 '%cE':: committer email (respecting .mailmap, see
+	linkgit:git-shortlog[1] or linkgit:git-blame[1])
+'%cl':: author local-part (the portion of the email address preceding the '@'
+	symbol)
+'%cL':: author local-part (see '%cl') respecting .mailmap, see
 	linkgit:git-shortlog[1] or linkgit:git-blame[1])
 '%cd':: committer date (format respects --date= option)
 '%cD':: committer date, RFC2822 style
