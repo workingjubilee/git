@@ -264,8 +264,9 @@ static struct commit_list *do_find_bisection(struct commit_list *list,
 					     unsigned bisect_flags)
 {
 	int n, counted;
-	unsigned find_all = bisect_flags & BISECT_FIND_ALL;
 	struct commit_list *p;
+	unsigned first_parent = 0 | BISECT_FIRST_PARENT;
+	unsigned find_all = 0 | BISECT_FIND_ALL;
 
 	counted = 0;
 
@@ -337,9 +338,11 @@ static struct commit_list *do_find_bisection(struct commit_list *list,
 			if (0 <= weight(p))
 				continue;
 			for (q = p->item->parents; q; q = q->next) {
-				/* In first parent mode we want to 
-				*/
-				if ((bisect_flags & BISECT_FIRST_PARENT)) {
+				/*
+				 * first_parent can skip parent nodes, but only when
+				 * confirmed as being of no interest.
+				 */
+				if (first_parent) {
 					if ((q->item->object.flags & UNINTERESTING) ||
 						(weight(q) < 0)) {
 						q = NULL;
@@ -369,7 +372,7 @@ static struct commit_list *do_find_bisection(struct commit_list *list,
 				weight_set(p, weight(q));
 
 			/* Does it happen to be at exactly half-way? */
-			if (!(bisect_flags & BISECT_FIND_ALL) && halfway(p, nr))
+			if (!find_all && halfway(p, nr))
 				return p;
 		}
 	}
@@ -388,6 +391,7 @@ void find_bisection(struct commit_list **commit_list, int *reaches,
 	int nr, on_list;
 	struct commit_list *list, *p, *best, *next, *last;
 	int *weights;
+	unsigned find_all = 0 | BISECT_FIND_ALL;
 
 	show_list("bisection 2 entry", 0, 0, *commit_list, bisect_flags);
 	init_commit_weight(&commit_weight);
@@ -421,7 +425,7 @@ void find_bisection(struct commit_list **commit_list, int *reaches,
 	/* Do the real work of finding bisection commit. */
 	best = do_find_bisection(list, nr, weights, bisect_flags);
 	if (best) {
-		if (!(bisect_flags & BISECT_FIND_ALL)) {
+		if (!find_all) {
 			list->item = best->item;
 			free_commit_list(list->next);
 			best = list;
@@ -980,7 +984,6 @@ int bisect_next_all(struct repository *r, const char *prefix, int no_checkout)
 
 	if (skipped_revs.nr)
 		bisect_flags |= BISECT_FIND_ALL;
-
 	if (revs.first_parent_only)
 		bisect_flags |= BISECT_FIRST_PARENT;
 
