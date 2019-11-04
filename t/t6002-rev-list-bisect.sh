@@ -254,12 +254,65 @@ test_expect_success 'rev-list --bisect can default to good/bad refs' '
 test_expect_success 'rev-parse --bisect can default to good/bad refs' '
 	git rev-parse c3 ^b1 ^c1 >expect &&
 	git rev-parse --bisect >actual &&
-
 	# output order depends on the refnames, which in turn depends on
 	# the exact sha1s. We just want to make sure we have the same set
 	# of lines in any order.
 	sort <expect >expect.sorted &&
 	sort <actual >actual.sorted &&
+	test_cmp expect.sorted actual.sorted
+'
+
+# --first-parent tests
+
+# --bisect --first-parent should pluck out the middle.
+printf "%s\n" e4 |
+test_output_expect_success "--bisect --first-parent" '
+	git rev-list --bisect --first-parent E ^F
+'
+
+printf "%s\n" E e1 e2 e3 e4 e5 e6 e7 e8 |
+test_output_expect_success "--first-parent" '
+	git rev-list --first-parent E ^F
+'
+
+# TODO: rework graph construction method so these results are stable
+test_output_expect_success '--bisect-vars --first-parent' '
+	git rev-list --bisect-vars --first-parent E ^F
+' <<-EOF
+	bisect_rev='e5'
+	bisect_nr=4
+	bisect_good=4
+	bisect_bad=3
+	bisect_all=9
+	bisect_steps=2
+EOF
+
+test_expect_success '--bisect-all --first-parent returns correct order' '
+	git rev-list --bisect-all --first-parent E ^F >actual &&
+	# Make sure the entries are sorted in the dist order
+	sed -e "s/.*dist=\([0-9]\).*/\1/" actual >actual.dists &&
+	sort -r -n actual.dists >actual.dists.sorted &&
+	test_cmp actual.dists.sorted actual.dists
+'
+
+# NEEDSWORK: this test could afford being hardened against other
+# changes in the same file.
+test_expect_success '--bisect-all --first-parent compares correctly' '
+	cat >expect <<-EOF &&
+	$(git rev-parse tags/e5) (tag: e5, dist=4)
+	$(git rev-parse tags/e4) (tag: e4, dist=4)
+	$(git rev-parse tags/e6) (tag: e6, dist=3)
+	$(git rev-parse tags/e3) (tag: e3, dist=3)
+	$(git rev-parse tags/e7) (tag: e7, dist=2)
+	$(git rev-parse tags/e2) (tag: e2, dist=2)
+	$(git rev-parse tags/e8) (tag: e8, dist=1)
+	$(git rev-parse tags/e1) (tag: e1, dist=1)
+	$(git rev-parse tags/E) (tag: E, dist=0)
+EOF
+
+git rev-list --bisect-all --first-parent E ^F >actual &&
+	sort actual >actual.sorted &&
+	sort expect >expect.sorted &&
 	test_cmp expect.sorted actual.sorted
 '
 
